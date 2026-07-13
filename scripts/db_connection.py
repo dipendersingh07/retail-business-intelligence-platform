@@ -95,3 +95,73 @@ def get_total_products(retailer_name):
     connection.close()
 
     return total_products
+def get_total_revenue(retailer_name):
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    query = """
+        SELECT
+            COALESCE(SUM(rp.selling_price * oi.quantity), 0)
+        FROM order_items oi
+        JOIN retailer_products rp
+            ON oi.retailer_product_id = rp.retailer_product_id
+        JOIN retailers r
+            ON rp.retailer_id = r.retailer_id
+        WHERE r.retailer_name = %s;
+    """
+
+    cursor.execute(query, (retailer_name,))
+
+    revenue = cursor.fetchone()[0]
+
+    cursor.close()
+    connection.close()
+
+    return revenue
+
+def get_active_promotions(retailer_name):
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    query = """
+        SELECT COUNT(*)
+        FROM promotions p
+        JOIN retailer_products rp
+            ON p.retailer_product_id = rp.retailer_product_id
+        JOIN retailers r
+            ON rp.retailer_id = r.retailer_id
+        WHERE r.retailer_name = %s;
+    """
+
+    cursor.execute(query, (retailer_name,))
+
+    total = cursor.fetchone()[0]
+
+    cursor.close()
+    connection.close()
+
+    return total
+
+def get_total_customers(retailer_name):
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    query = """
+        SELECT COUNT(DISTINCT customer_id)
+        FROM orders o
+        JOIN retailers r
+            ON o.retailer_id = r.retailer_id
+        WHERE r.retailer_name = %s;
+    """
+
+    cursor.execute(query, (retailer_name,))
+
+    total = cursor.fetchone()[0]
+
+    cursor.close()
+    connection.close()
+
+    return total
