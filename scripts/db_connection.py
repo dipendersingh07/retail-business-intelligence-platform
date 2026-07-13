@@ -240,3 +240,282 @@ def get_top_products(retailer_name):
 
     return data
 
+def get_sales_by_category(retailer_name):
+    connection = get_connection()
+
+    cursor = connection.cursor(dictionary=True)
+
+    query = """
+        SELECT
+            c.category_name,
+            SUM(oi.quantity * rp.selling_price) AS revenue
+
+        FROM order_items oi
+
+        JOIN orders o
+            ON oi.order_id = o.order_id
+
+        JOIN retailers r
+            ON o.retailer_id = r.retailer_id
+
+        JOIN retailer_products rp
+            ON oi.retailer_product_id = rp.retailer_product_id
+
+        JOIN products p
+            ON rp.product_id = p.product_id
+
+        JOIN categories c
+            ON p.category_id = c.category_id
+
+        WHERE r.retailer_name = %s
+
+        GROUP BY c.category_name
+
+        ORDER BY revenue DESC;
+    """
+
+    cursor.execute(query, (retailer_name,))
+
+    data = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return data
+
+def get_recent_orders(retailer_name):
+    connection = get_connection()
+
+    cursor = connection.cursor(dictionary=True)
+
+    query = """
+        SELECT
+            o.order_id,
+            CONCAT(c.first_name, ' ', c.last_name) AS customer,
+            o.order_date,
+            o.payment_method,
+
+            SUM(
+                oi.quantity * rp.selling_price
+            ) AS total
+
+        FROM orders o
+
+        JOIN customers c
+            ON o.customer_id = c.customer_id
+
+        JOIN retailers r
+            ON o.retailer_id = r.retailer_id
+
+        JOIN order_items oi
+            ON o.order_id = oi.order_id
+
+        JOIN retailer_products rp
+            ON oi.retailer_product_id = rp.retailer_product_id
+
+        WHERE r.retailer_name = %s
+
+        GROUP BY
+            o.order_id,
+            customer,
+            o.order_date,
+            o.payment_method
+
+        ORDER BY o.order_date DESC
+
+        LIMIT 10;
+    """
+
+    cursor.execute(query, (retailer_name,))
+
+    orders = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return orders
+
+def get_customers_by_city(retailer_name):
+    connection = get_connection()
+
+    cursor = connection.cursor(dictionary=True)
+
+    query = """
+        SELECT
+            c.city,
+            COUNT(DISTINCT o.customer_id) AS customers
+        FROM customers c
+        JOIN orders o
+            ON c.customer_id = o.customer_id
+        JOIN retailers r
+            ON o.retailer_id = r.retailer_id
+        WHERE r.retailer_name = %s
+        GROUP BY c.city
+        ORDER BY customers DESC;
+    """
+
+    cursor.execute(query, (retailer_name,))
+
+    data = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return data
+
+def get_payment_methods(retailer_name):
+    connection = get_connection()
+
+    cursor = connection.cursor(dictionary=True)
+
+    query = """
+        SELECT
+            payment_method,
+            COUNT(*) AS total
+        FROM orders o
+        JOIN retailers r
+            ON o.retailer_id = r.retailer_id
+        WHERE r.retailer_name = %s
+        GROUP BY payment_method
+        ORDER BY total DESC;
+    """
+
+    cursor.execute(query, (retailer_name,))
+
+    data = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return data
+
+def get_low_stock_products(retailer_name):
+    connection = get_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    query = """
+    SELECT
+        p.product_name,
+        rp.stock_quantity
+    FROM retailer_products rp
+    JOIN retailers r
+        ON rp.retailer_id=r.retailer_id
+    JOIN products p
+        ON rp.product_id=p.product_id
+    WHERE r.retailer_name=%s
+    ORDER BY rp.stock_quantity
+    LIMIT 5;
+    """
+
+    cursor.execute(query,(retailer_name,))
+    data=cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return data
+
+def get_top_customers(retailer_name):
+    connection=get_connection()
+
+    cursor=connection.cursor(dictionary=True)
+
+    query="""
+    SELECT
+        CONCAT(c.first_name,' ',c.last_name) customer,
+        SUM(oi.quantity*rp.selling_price) total_spent
+
+    FROM customers c
+
+    JOIN orders o
+        ON c.customer_id=o.customer_id
+
+    JOIN order_items oi
+        ON o.order_id=oi.order_id
+
+    JOIN retailer_products rp
+        ON oi.retailer_product_id=rp.retailer_product_id
+
+    JOIN retailers r
+        ON o.retailer_id=r.retailer_id
+
+    WHERE r.retailer_name=%s
+
+    GROUP BY customer
+
+    ORDER BY total_spent DESC
+
+    LIMIT 5;
+    """
+
+    cursor.execute(query,(retailer_name,))
+    data=cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return data
+
+def get_monthly_sales(retailer_name):
+    connection=get_connection()
+
+    cursor=connection.cursor(dictionary=True)
+
+    query="""
+    SELECT
+        DATE_FORMAT(o.order_date,'%Y-%m') month,
+        SUM(oi.quantity*rp.selling_price) revenue
+
+    FROM orders o
+
+    JOIN order_items oi
+        ON o.order_id=oi.order_id
+
+    JOIN retailer_products rp
+        ON oi.retailer_product_id=rp.retailer_product_id
+
+    JOIN retailers r
+        ON o.retailer_id=r.retailer_id
+
+    WHERE r.retailer_name=%s
+
+    GROUP BY month
+
+    ORDER BY month;
+    """
+
+    cursor.execute(query,(retailer_name,))
+    data=cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return data
+
+def get_inventory_summary(retailer_name):
+    connection=get_connection()
+
+    cursor=connection.cursor(dictionary=True)
+
+    query="""
+    SELECT
+        COUNT(*) total_products,
+        SUM(stock_quantity) total_stock,
+        SUM(stock_quantity*selling_price) inventory_value
+
+    FROM retailer_products rp
+
+    JOIN retailers r
+        ON rp.retailer_id=r.retailer_id
+
+    WHERE r.retailer_name=%s;
+    """
+
+    cursor.execute(query,(retailer_name,))
+
+    data=cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+
+    return data
