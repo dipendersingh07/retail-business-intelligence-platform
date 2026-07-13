@@ -1,4 +1,6 @@
 import streamlit as st
+import pandas as pd
+
 from scripts.db_connection import (
     get_retailers,
     get_retailer_details,
@@ -6,8 +8,11 @@ from scripts.db_connection import (
     get_total_products,
     get_total_revenue,
     get_active_promotions,
-    get_total_customers
+    get_total_customers,
+    get_sales_trend,
+    get_top_products
 )
+
 st.set_page_config(
     page_title="Retail Business Intelligence Platform",
     page_icon="📊",
@@ -30,7 +35,8 @@ total_products = get_total_products(selected_retailer)
 total_revenue = get_total_revenue(selected_retailer)
 active_promotions = get_active_promotions(selected_retailer)
 total_customers = get_total_customers(selected_retailer)
-
+sales_trend = get_sales_trend(selected_retailer)
+top_products = get_top_products(selected_retailer)
 
 st.sidebar.success("Database Connected")
 
@@ -91,3 +97,25 @@ with col5:
         "Customers",
         total_customers
     )
+
+    st.markdown("---")
+st.subheader("Revenue Trend")
+
+df_sales = pd.DataFrame(sales_trend)
+
+if not df_sales.empty:
+    df_sales = df_sales.set_index("order_date")
+    st.line_chart(df_sales["revenue"])
+else:
+    st.info("No sales data available.")
+
+    st.markdown("---")
+st.subheader("Top Selling Products")
+
+df_products = pd.DataFrame(top_products)
+
+if not df_products.empty:
+    df_products = df_products.set_index("product_name")
+    st.bar_chart(df_products["total_sold"])
+else:
+    st.info("No product sales available.")

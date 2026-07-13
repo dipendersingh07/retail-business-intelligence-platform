@@ -12,6 +12,7 @@ def get_connection():
         password=os.getenv("DB_PASSWORD"),
         database=os.getenv("DB_NAME")
     )
+
 def get_retailers():
     connection = get_connection()
 
@@ -74,6 +75,7 @@ def get_total_orders(retailer_name):
     connection.close()
 
     return total_orders
+
 def get_total_products(retailer_name):
     connection = get_connection()
 
@@ -95,6 +97,7 @@ def get_total_products(retailer_name):
     connection.close()
 
     return total_products
+
 def get_total_revenue(retailer_name):
     connection = get_connection()
 
@@ -165,3 +168,75 @@ def get_total_customers(retailer_name):
     connection.close()
 
     return total
+
+def get_sales_trend(retailer_name):
+    connection = get_connection()
+
+    cursor = connection.cursor(dictionary=True)
+
+    query = """
+        SELECT
+            o.order_date,
+            SUM(rp.selling_price * oi.quantity) AS revenue
+        FROM orders o
+        JOIN order_items oi
+            ON o.order_id = oi.order_id
+        JOIN retailer_products rp
+            ON oi.retailer_product_id = rp.retailer_product_id
+        JOIN retailers r
+            ON o.retailer_id = r.retailer_id
+        WHERE r.retailer_name = %s
+        GROUP BY o.order_date
+        ORDER BY o.order_date;
+    """
+
+    cursor.execute(query, (retailer_name,))
+
+    data = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return data
+
+def get_top_products(retailer_name):
+    connection = get_connection()
+
+    cursor = connection.cursor(dictionary=True)
+
+    query = """
+        SELECT
+            p.product_name,
+            SUM(oi.quantity) AS total_sold
+        FROM order_items oi
+
+        JOIN orders o
+            ON oi.order_id = o.order_id
+
+        JOIN retailers r
+            ON o.retailer_id = r.retailer_id
+
+        JOIN retailer_products rp
+            ON oi.retailer_product_id = rp.retailer_product_id
+
+        JOIN products p
+            ON rp.product_id = p.product_id
+
+        WHERE r.retailer_name = %s
+
+        GROUP BY p.product_name
+
+        ORDER BY total_sold DESC
+
+        LIMIT 5;
+    """
+
+    cursor.execute(query, (retailer_name,))
+
+    data = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return data
+
