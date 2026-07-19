@@ -83,19 +83,6 @@ col3.metric(
 )
 st.divider()
 
-# =======================
-# Row 1
-# =======================
-
-left, right = st.columns(2)
-
-    # ======================================================
-# Analytics Dashboard
-# ======================================================
-
-
-# ---------------- Row 1 ----------------
-
 col1, col2 = st.columns(2)
 
 with col1:
@@ -152,7 +139,7 @@ with col2:
     else:
         st.info("No monthly sales available.")
 
-# ---------------- Row 2 ----------------
+
 
 col1, col2 = st.columns(2)
 
@@ -211,7 +198,7 @@ with col2:
     else:
         st.info("No category sales.")
 
-# ---------------- Row 3 ----------------
+
 
 col1, col2 = st.columns(2)
 
@@ -263,7 +250,7 @@ with col2:
 
         st.plotly_chart(fig, use_container_width=True)
 
-# ---------------- Row 4 ----------------
+
 
 col1, col2 = st.columns(2)
 
@@ -287,7 +274,7 @@ with col2:
         hide_index=True
     )
 
-# ---------------- Recent Orders ----------------
+
 
 st.markdown("---")
 
@@ -299,7 +286,7 @@ st.dataframe(
     hide_index=True
 )
 
-# ---------------- Inventory ----------------
+
 
 st.markdown("---")
 
